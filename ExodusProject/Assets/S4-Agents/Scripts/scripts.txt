@@ -1,0 +1,6 @@
+eg:
+
+AgentMovement.cs
+PathFollower.cs
+— reads IS path arrays
+AnimatorController.cs

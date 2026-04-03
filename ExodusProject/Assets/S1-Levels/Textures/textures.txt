@@ -1,0 +1,1 @@
+albedo, normal, roughness maps

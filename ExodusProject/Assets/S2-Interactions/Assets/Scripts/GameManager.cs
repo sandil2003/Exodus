@@ -1,5 +1,4 @@
 using UnityEngine;
-using UnityEngine.UI;
 
 public class GameManager : MonoBehaviour
 {
@@ -17,22 +16,13 @@ public class GameManager : MonoBehaviour
     public PlayerHealth playerHealth;
     public PlayerPickup playerPickup;
 
-    [Header("UI")]
-    public Text timerText;
-    public Text rescueText;
-    public Text passengerText;
-    public GameObject winPanel;
-    public GameObject losePanel;
-
     void Awake()
     {
         Instance = this;
-    }
 
-    void Start()
-    {
-        if (winPanel != null) winPanel.SetActive(false);
-        if (losePanel != null) losePanel.SetActive(false);
+        // Fix the NullReferenceException by finding the player automatically
+        if (playerHealth == null) playerHealth = FindObjectOfType<PlayerHealth>();
+        if (playerPickup == null) playerPickup = FindObjectOfType<PlayerPickup>();
     }
 
     void Update()
@@ -54,24 +44,27 @@ public class GameManager : MonoBehaviour
             LoseGame();
         }
 
-        float minutes = Mathf.FloorToInt(gameTime / 60);
-        float seconds = Mathf.FloorToInt(gameTime % 60);
-
-        if (timerText != null)
-            timerText.text = minutes.ToString("00") + ":" + seconds.ToString("00");
+        // Send the timer value to the UIManager instead of handling text here
+        if (UIManager.Instance != null)
+            UIManager.Instance.UpdateTimer(gameTime);
     }
 
     void UpdateUI()
     {
-        if (rescueText != null)
-            rescueText.text = "Rescued: " + rescuedHumans + " / " + totalHumans;
+        if (UIManager.Instance == null) return;
 
-        if (passengerText != null)
-            passengerText.text = "Passengers: " + playerPickup.passengerCount;
+        // Send counts to the UIManager
+        UIManager.Instance.UpdateRescueCount(rescuedHumans, totalHumans);
+        
+        if (playerPickup != null)
+            UIManager.Instance.UpdatePassengerCount(playerPickup.passengerCount, 2);
     }
 
     void CheckGameState()
     {
+        // Safety check to prevent crash if playerHealth is still null
+        if (playerHealth == null) return;
+
         if (rescuedHumans >= totalHumans)
         {
             WinGame();
@@ -92,10 +85,7 @@ public class GameManager : MonoBehaviour
     {
         gameOver = true;
         Debug.Log("YOU WIN");
-
-        if (winPanel != null)
-            winPanel.SetActive(true);
-
+        if (UIManager.Instance != null) UIManager.Instance.ShowWinScreen();
         Time.timeScale = 0f;
     }
 
@@ -103,10 +93,7 @@ public class GameManager : MonoBehaviour
     {
         gameOver = true;
         Debug.Log("YOU LOSE");
-
-        if (losePanel != null)
-            losePanel.SetActive(true);
-
+        if (UIManager.Instance != null) UIManager.Instance.ShowLoseScreen();
         Time.timeScale = 0f;
     }
 }

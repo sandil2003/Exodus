@@ -1,0 +1,50 @@
+using UnityEngine;
+
+public class PlayerPickup : MonoBehaviour
+{
+    public int passengerCount = 0;
+    public int maxPassengers = 2;
+
+    private HumanPickup currentHuman;
+
+    private void OnTriggerEnter(Collider other)
+    {
+        HumanPickup human = other.GetComponent<HumanPickup>();
+        if(human != null)
+        {
+            currentHuman = human;
+        }
+    }
+
+    private void OnTriggerExit(Collider other)
+    {
+        HumanPickup human = other.GetComponent<HumanPickup>();
+        if(human != null)
+        {
+            currentHuman = null;
+        }
+    }
+
+    void Update()
+    {
+        if(Input.GetKeyDown(KeyCode.E))
+        {
+            TryPickup();
+        }
+    }
+
+    void TryPickup()
+    {
+        if(currentHuman != null && passengerCount < maxPassengers)
+        {
+            passengerCount++;
+            Destroy(currentHuman.gameObject);
+
+            Debug.Log("Picked up human. Passengers: " + passengerCount);
+        }
+        else if(passengerCount >= maxPassengers)
+        {
+            Debug.Log("Vehicle Full!");
+        }
+    }
+}

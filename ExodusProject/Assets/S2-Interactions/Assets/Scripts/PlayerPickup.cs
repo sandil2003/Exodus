@@ -4,6 +4,7 @@ public class PlayerPickup : MonoBehaviour
 {
     public int passengerCount = 0;
     public int maxPassengers = 2;
+    public int rescuedHumans = 0;
 
     private HumanPickup currentHuman;
 
@@ -39,12 +40,19 @@ public class PlayerPickup : MonoBehaviour
         {
             passengerCount++;
             Destroy(currentHuman.gameObject);
-
             Debug.Log("Picked up human. Passengers: " + passengerCount);
         }
-        else if(passengerCount >= maxPassengers)
+    }
+
+    public void DepositPassengers()
+    {
+        if(passengerCount > 0)
         {
-            Debug.Log("Vehicle Full!");
+            rescuedHumans += passengerCount;
+            Debug.Log("Humans Rescued: " + rescuedHumans);
+
+            passengerCount = 0;
+            Debug.Log("Passengers emptied");
         }
     }
 }

@@ -3,22 +3,39 @@ using UnityEngine;
 public class CameraFollow : MonoBehaviour
 {
     public Transform target;
-    // X = side to side, Y = height, Z = distance behind
-    public Vector3 offset = new Vector3(0, 3, -6); 
+    
+    [Header("Camera Settings")]
+    // X = Side to side, Y = Height, Z = Distance from car (flip sign if camera is in front)
+    public Vector3 offset = new Vector3(0, 4f, 8f); 
     public float smoothSpeed = 10f;
+    public float lookAtHeight = 1.5f;
+
+    void Start()
+    {
+        if (target)
+        {
+            // Snap to the target immediately so it doesn't start at (0,0,0)
+            SnapToTarget();
+        }
+    }
 
     void LateUpdate()
     {
         if (!target) return;
 
-        // Calculate the position we want the camera to be in
-        // TransformDirection converts our offset into "Car Space"
-        Vector3 desiredPosition = target.position + target.TransformDirection(offset);
+        // TransformPoint converts our local offset into a world-space position relative to the car
+        Vector3 desiredPosition = target.TransformPoint(offset);
         
-        // Smoothly move the camera to that position
+        // Smoothly interpolate to the desired position
         transform.position = Vector3.Lerp(transform.position, desiredPosition, smoothSpeed * Time.deltaTime);
 
-        // Always look at the car (slightly above the center)
-        transform.LookAt(target.position + Vector3.up * 1.2f);
+        // Always look at the car, slightly above its center for a better view
+        transform.LookAt(target.position + Vector3.up * lookAtHeight);
+    }
+
+    public void SnapToTarget()
+    {
+        transform.position = target.TransformPoint(offset);
+        transform.LookAt(target.position + Vector3.up * lookAtHeight);
     }
 }

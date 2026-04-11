@@ -10,19 +10,43 @@ public class TimerController : MonoBehaviour
     void Start()
     {
         _remaining = totalTime;
-        _hud = FindObjectOfType<HUDManager>();
+        FindHUD();
+        
+        // Initial update so it doesn't wait a frame
+        if (_hud != null) _hud.UpdateTimer(_remaining);
+    }
+
+    private void FindHUD()
+    {
+        if (_hud == null)
+        {
+            _hud = FindObjectOfType<HUDManager>();
+            if (_hud == null)
+            {
+                Debug.LogWarning("TimerController: HUDManager not found in scene!");
+            }
+        }
     }
 
     void Update()
     {
         if (!_running) return;
+
         _remaining -= Time.deltaTime;
-        _remaining = Mathf.Max(0, _remaining);
-        _hud.UpdateTimer(_remaining);
+        
         if (_remaining <= 0)
         {
+            _remaining = 0;
             _running = false;
-            FindObjectOfType<WinLoseManager>().TriggerLose("timer");
+            
+            var wl = FindObjectOfType<WinLoseManager>();
+            if (wl != null) wl.TriggerLose("timer");
+            else Debug.LogError("TimerController: WinLoseManager not found!");
+        }
+
+        if (_hud != null)
+        {
+            _hud.UpdateTimer(_remaining);
         }
     }
 

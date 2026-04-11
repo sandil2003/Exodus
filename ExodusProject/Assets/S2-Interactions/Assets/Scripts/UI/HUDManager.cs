@@ -12,10 +12,26 @@ public class HUDManager : MonoBehaviour
 
     public void UpdateTimer(float seconds)
     {
+        if (timerText == null) return;
+
+        // Force the object to be active so you can see it
+        if (!timerText.gameObject.activeInHierarchy)
+        {
+            timerText.gameObject.SetActive(true);
+        }
+
         int m = Mathf.FloorToInt(seconds / 60);
         int s = Mathf.FloorToInt(seconds % 60);
-        timerText.text = $"{m:00}:{s:00}";
-        timerText.color = seconds < 30 ? Color.red : Color.white;
+        string timeStr = $"{m:00}:{s:00}";
+        
+        // Use SetText (Best practice for TMP)
+        timerText.SetText(timeStr);
+        
+        // Use a high-contrast color (Yellow) so it doesn't blend with white backgrounds
+        timerText.color = seconds < 30 ? Color.red : Color.yellow;
+        
+        // Log the EXACT object name to help you find it in the Hierarchy
+        Debug.Log($"[Timer Fix] Updating Object: '{timerText.gameObject.name}' with time: {timeStr}");
     }
 
     public void UpdateHealth(int current, int max)
@@ -35,6 +51,9 @@ public class HUDManager : MonoBehaviour
 
     public void ShowEPrompt(bool show)
     {
-        ePromptUI.SetActive(show);
+        if (ePromptUI != null)
+        {
+            ePromptUI.SetActive(show);
+        }
     }
 }

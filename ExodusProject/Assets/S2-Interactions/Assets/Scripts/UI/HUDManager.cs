@@ -36,16 +36,19 @@ public class HUDManager : MonoBehaviour
 
     public void UpdateHealth(int current, int max)
     {
+        if (healthSlider == null) return;
         healthSlider.value = (float)current / max;
     }
 
     public void UpdatePassengerCount(int count)
     {
+        if (passengerText == null) return;
         passengerText.text = $"Passengers: {count}/2";
     }
 
     public void UpdateRescuedCount(int count, int total)
     {
+        if (rescuedText == null) return;
         rescuedText.text = $"Rescued: {count}/{total}";
     }
 

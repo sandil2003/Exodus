@@ -1,5 +1,0 @@
-eg: 
-
-DoorController.cs
-BarricadePhysics.cs
-ThrowableObject.cs

@@ -4,19 +4,24 @@ public class DepositZone : MonoBehaviour
 {
     void OnTriggerEnter(Collider other)
     {
-        // 1. ALWAYS Log whenever ANYTHING touches the cube trigger
-        Debug.Log($"[DepositZone] Trigger hit by: '{other.name}' (Tag: {other.tag})");
+        ProcessDeposit(other.gameObject);
+    }
 
-        // 2. Look for the PickupSystem script anywhere on the hitting object or its parents
-        PickupSystem ps = other.GetComponentInParent<PickupSystem>();
+    void OnCollisionEnter(Collision collision)
+    {
+        ProcessDeposit(collision.gameObject);
+    }
+
+    private void ProcessDeposit(GameObject otherGo)
+    {
+        // Look for the PickupSystem script anywhere on the hitting object or its parents
+        PickupSystem ps = otherGo.GetComponentInParent<PickupSystem>();
 
         if (ps != null)
         {
-            Debug.Log($"[DepositZone] Found PickupSystem on: {ps.gameObject.name}");
-            
             if (ps.currentPassengers > 0)
             {
-                Debug.Log($"[DepositZone] OK! Depositing {ps.currentPassengers} passengers.");
+                Debug.Log($"[DepositZone] Depositing {ps.currentPassengers} humans at {gameObject.name}.");
                 ps.DepositAll();
             }
             else

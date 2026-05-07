@@ -50,11 +50,16 @@ public class PickupSystem : MonoBehaviour
 
                 HumanPickedUp?.Invoke(-1, pos);
 
+                if (GameManager.Instance != null)
+                {
+                    GameManager.Instance.ShowEPrompt(false);
+                    // We no longer add to rescued count here; we wait until they reach the Deposit Zone.
+                }
                 if (_hud != null)
                 {
                     _hud.UpdatePassengerCount(currentPassengers);
-                    _hud.ShowEPrompt(false);
                 }
+                Debug.Log($"Successfully picked up: {pos}");
             }
             else
             {
@@ -81,8 +86,15 @@ public class PickupSystem : MonoBehaviour
 
             if (currentPassengers < maxCapacity)
             {
-                FindHUD();
-                if (_hud != null) _hud.ShowEPrompt(true);
+                if (GameManager.Instance != null)
+                {
+                    Debug.Log("Showing Press E prompt via GameManager.");
+                    GameManager.Instance.ShowEPrompt(true);
+                }
+                else
+                {
+                    Debug.LogError("GameManager.Instance is NULL! Cannot show prompt.");
+                }
             }
         }
     }
@@ -92,14 +104,34 @@ public class PickupSystem : MonoBehaviour
         if (other.CompareTag("HumanNPC"))
         {
             _nearbyHuman = null;
-            if (_hud != null) _hud.ShowEPrompt(false);
+            if (GameManager.Instance != null)
+            {
+                GameManager.Instance.ShowEPrompt(false);
+            }
         }
+    }
+
+    // Handle physical collisions as well (if NPC is not a trigger)
+    void OnCollisionEnter(Collision collision)
+    {
+        OnTriggerEnter(collision.collider);
+    }
+
+    void OnCollisionExit(Collision collision)
+    {
+        OnTriggerExit(collision.collider);
     }
 
     public void DepositAll()
     {
-        FindObjectOfType<GameManager>().OnHumansDeposited(currentPassengers);
+        // Humans are officially 'rescued' only when they reach the deposit zone building.
+        if (GameManager.Instance != null)
+        {
+            GameManager.Instance.OnHumansDeposited(currentPassengers);
+        }
+        
+        Debug.Log($"[PickupSystem] Deposited {currentPassengers} humans at the building!");
         currentPassengers = 0;
-        _hud.UpdatePassengerCount(0);
+        if (_hud != null) _hud.UpdatePassengerCount(0);
     }
 }

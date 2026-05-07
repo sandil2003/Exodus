@@ -1,41 +1,83 @@
 using UnityEngine;
 
-public class CameraFollow : MonoBehaviour
+public class CarController : MonoBehaviour
 {
-    public Transform target;
-    
-    [Header("Camera Settings")]
-    public Vector3 offset = new Vector3(0, 4f, 8f); 
-    public float smoothTime = 0.12f; // Time it takes to reach the target
-    public float lookAtHeight = 1.5f;
+    [Header("Movement Settings")]
+    public float moveSpeed = 30f; // Increased speed
+    public float boostMultiplier = 2f; 
+    public float turnSpeed = 150f; // Increased turn speed
 
-    private Vector3 currentVelocity = Vector3.zero;
+    private Rigidbody rb;
+    private float moveInput;
+    private float turnInput;
+    private bool isBoosting;
 
     void Start()
     {
-        if (target)
-        {
-            SnapToTarget();
-        }
-    }
-
-    void LateUpdate()
-    {
-        if (!target) return;
-
-        // 1. Calculate desired position
-        Vector3 desiredPosition = target.TransformPoint(offset);
+        rb = GetComponent<Rigidbody>();
         
-        // 2. Use SmoothDamp instead of Lerp for a much more fluid follow
-        transform.position = Vector3.SmoothDamp(transform.position, desiredPosition, ref currentVelocity, smoothTime);
+        // Initial snap to height
+        Vector3 pos = transform.position;
+        pos.y = 1f;
+        transform.position = pos;
 
-        // 3. Always look at the car
-        transform.LookAt(target.position + Vector3.up * lookAtHeight);
+        // Keep it flat and stable
+        rb.constraints = RigidbodyConstraints.FreezePositionY | 
+                         RigidbodyConstraints.FreezeRotationX | 
+                         RigidbodyConstraints.FreezeRotationZ;
+
+        // Higher damping stops the "sliding on ice" feeling
+        rb.linearDamping = 2f;
+        rb.angularDamping = 5f;
+        
+        rb.WakeUp();
     }
 
-    public void SnapToTarget()
+    void Update()
     {
-        transform.position = target.TransformPoint(offset);
-        transform.LookAt(target.position + Vector3.up * lookAtHeight);
+        moveInput = Input.GetAxis("Vertical");
+        turnInput = Input.GetAxis("Horizontal");
+        isBoosting = Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift);
+    }
+
+    void FixedUpdate()
+    {
+        MoveCar();
+        TurnCar();
+    }
+
+    void MoveCar()
+    {
+        float currentSpeed = isBoosting ? moveSpeed * boostMultiplier : moveSpeed;
+
+        if (Mathf.Abs(moveInput) < 0.01f)
+        {
+            // Stop forward movement but allow gravity/physics to settle
+            rb.linearVelocity = new Vector3(0, rb.linearVelocity.y, 0);
+            return;
+        }
+
+        // FORCE ALIGNMENT: We set the velocity strictly to the forward direction.
+        // This prevents the "sideways" sliding.
+        Vector3 forwardVelocity = transform.forward * moveInput * currentSpeed;
+        rb.linearVelocity = new Vector3(forwardVelocity.x, rb.linearVelocity.y, forwardVelocity.z);
+    }
+
+    void TurnCar()
+    {
+        // Only allow turning if we are providing move input
+        if (Mathf.Abs(moveInput) > 0.1f)
+        {
+            float steerDirection = moveInput > 0 ? 1 : -1;
+            float rotationAmount = turnInput * steerDirection * turnSpeed * Time.fixedDeltaTime;
+            
+            Quaternion turnRotation = Quaternion.Euler(0f, rotationAmount, 0f);
+            rb.MoveRotation(rb.rotation * turnRotation);
+        }
+        else
+        {
+            // Kill any spinning when not actively steering
+            rb.angularVelocity = Vector3.zero;
+        }
     }
 }

@@ -1,74 +1,41 @@
 using UnityEngine;
 
-public class CarController : MonoBehaviour
+public class CameraFollow : MonoBehaviour
 {
-    [Header("Movement Settings")]
-    public float moveSpeed = 15f; 
-    public float turnSpeed = 100f;
+    public Transform target;
+    
+    [Header("Camera Settings")]
+    public Vector3 offset = new Vector3(0, 4f, 8f); 
+    public float smoothTime = 0.12f; // Time it takes to reach the target
+    public float lookAtHeight = 1.5f;
 
-    private Rigidbody rb;
-    private float moveInput;
-    private float turnInput;
+    private Vector3 currentVelocity = Vector3.zero;
 
     void Start()
     {
-        // Get the Rigidbody component attached to the car
-        rb = GetComponent<Rigidbody>();
-        
-        // This stops the car from tipping over when turning
-        rb.constraints = RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationZ;
-
-        // Ensure the car is awake for physics
-        rb.WakeUp();
-    }
-
-    void Update()
-    {
-        // 1. Get Input from Arrow Keys/WASD
-        moveInput = Input.GetAxis("Vertical");   // Up/Down
-        turnInput = Input.GetAxis("Horizontal"); // Left/Right
-    }
-
-    void FixedUpdate()
-    {
-        // We use FixedUpdate for physics-based movement (Rigidbody)
-        MoveCar();
-        TurnCar();
-    }
-
-    void MoveCar()
-    {
-        // 1. Calculate how much we want to move this frame
-        Vector3 movement = transform.forward * moveInput * moveSpeed * Time.fixedDeltaTime;
-        
-        // 2. SILENT WALL DETECTION: Check if any building is in front of the car
-        // We look ahead in the direction of movement (forward or backward)
-        Vector3 direction = moveInput >= 0 ? transform.forward : -transform.forward;
-        float distance = Mathf.Abs(moveInput * moveSpeed * Time.fixedDeltaTime);
-
-        // If something is in the way, we stop moving immediately (no logs)
-        if (moveInput != 0 && rb.SweepTest(direction, out RaycastHit hit, distance))
+        if (target)
         {
-            return; 
+            SnapToTarget();
         }
-
-        // 3. Move the Rigidbody. This respects Mesh Colliders!
-        rb.MovePosition(rb.position + movement);
     }
 
-    void TurnCar()
+    void LateUpdate()
     {
-        // Only allow turning if the car is moving (forward or backward)
-        if (moveInput != 0)
-        {
-            // If moving backward, invert the steering so it feels natural
-            float steerDirection = moveInput > 0 ? 1 : -1;
-            
-            // Rotate around the Green arrow (Vector3.up)
-            float rotation = turnInput * steerDirection * turnSpeed * Time.fixedDeltaTime;
-            Quaternion turnRotation = Quaternion.Euler(0f, rotation, 0f);
-            
-            rb.MoveRotation(rb.rotation * turnRotation);
-        }
+        if (!target) return;
+
+        // 1. Calculate desired position
+        Vector3 desiredPosition = target.TransformPoint(offset);
+        
+        // 2. Use SmoothDamp instead of Lerp for a much more fluid follow
+        transform.position = Vector3.SmoothDamp(transform.position, desiredPosition, ref currentVelocity, smoothTime);
+
+        // 3. Always look at the car
+        transform.LookAt(target.position + Vector3.up * lookAtHeight);
+    }
+
+    public void SnapToTarget()
+    {
+        transform.position = target.TransformPoint(offset);
+        transform.LookAt(target.position + Vector3.up * lookAtHeight);
     }
 }
